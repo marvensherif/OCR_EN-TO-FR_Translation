@@ -1,15 +1,14 @@
+# OCR and Translation Evaluation with Semantic Analysis
 
-# OCR and Translation Evaluation
+This Python script extracts text from an image using Optical Character Recognition (OCR) with **Tesseract**, evaluates the OCR accuracy using Word Error Rate (WER), and assesses the translation quality from English to French using **MarianMT** with both BLEU score and semantic similarity analysis.
 
-This Python script extracts text from an image using Optical Character Recognition (OCR) with **Tesseract**, evaluates the OCR accuracy using Word Error Rate (WER), and assesses the translation quality from English to French using **MarianMT** and BLEU score.
-
-## Requirements
-
-- `pytesseract` (for OCR)
-- `Pillow` (for image processing)
-- `nltk` (for BLEU score calculation)
-- `jiwer` (for WER calculation)
-- `transformers` (for machine translation)
+## Features
+- **OCR Text Extraction**: Robust image-to-text conversion
+- **Translation Quality Metrics**: 
+  - Traditional BLEU score
+  - Semantic similarity using Sentence-BERT
+- **Error Handling**: Robust normalization and validation
+- **Multilingual Support**: Works with English/French and other language pairs
 
 
 Alternatively, you can use the provided Colab notebook which automatically installs the required dependencies.
@@ -20,27 +19,94 @@ For easy testing and usage, there is an accompanying Colab notebook that you can
 
 ## Architecture
 
-- **Tesseract (OCR)**:  
-   Tesseract is an open-source OCR engine that is used for extracting text from images. It recognizes text in scanned images and outputs the recognized text. The text is then processed and evaluated for accuracy.
-   
-   Tesseract uses machine learning and neural networks to recognize characters and words. It processes the image by detecting characters and words in various languages, and then outputs the best possible text.
+# OCR, Translation, and Semantic Analysis Components
 
-- **MarianMT (Translation)**:  
-   MarianMT is a multilingual machine translation model from the `transformers` library, developed by the Helsinki-NLP group. In this script, MarianMT is used for translating text from English to French. The translation is performed using a pre-trained model that uses attention-based neural networks for high-quality translations.
+## Tesseract (OCR)
+**Open-source OCR engine using LSTM networks for text recognition:**
+- Processes images through segmentation and feature extraction
+- Supports multiple languages and font types
+- Outputs UTF-8 text with confidence scores
 
-   The MarianMT model works by generating a translated sequence of tokens from an input sequence using a transformer architecture.
+## MarianMT (Translation)
+**Neural Machine Translation framework using transformer architecture:**
+- Attention mechanisms for context-aware translations
+- Pre-trained English→French model (OPUS-MT)
+- Handles sequences up to 512 tokens
+
+## Sentence-BERT (Semantic Analysis)
+**Multilingual embedding model for semantic understanding:**
+- Generates 512-dimensional sentence vectors
+- Calculates cosine similarity between texts
+- Trained on multilingual paraphrase datasets
+
+## Metric Comparison
+
+| Feature               | BLEU Score       | Semantic Similarity |
+|-----------------------|------------------|---------------------|
+| Basis                 | N-gram overlap   | Meaning vectors     |
+| Paraphrase Handling   | ❌               | ✅                  |
+| Cross-language        | ❌               | ✅                  |
+| Output Range          | 0-1              | 0-1 (cosine)        |
 
 ## Functions
 
-- **`ocr_extraction(image_path)`**: Extracts text from an image using Tesseract OCR.
-- **`normalize_text(text)`**: Normalizes text by converting it to lowercase, removing punctuation, and collapsing spaces.
-- **`calculate_wer(reference, hypothesis)`**: Calculates the Word Error Rate (WER) between a reference text and OCR output.
-- **`calculate_bleu(reference, hypothesis)`**: Computes the BLEU score between a reference translation and the translated text.
-- **`load_translation_model()`**: Loads the MarianMT model for English-to-French translation.
-- **`translate_text(model, tokenizer, text)`**: Translates the input text from English to French using the MarianMT model.
-- **`evaluate_ocr(ocr_output, ground_truth_ocr)`**: Evaluates OCR accuracy using WER.
-- **`evaluate_translation(ocr_output, ground_truth_translation, model, tokenizer)`**: Evaluates translation accuracy using BLEU score.
-- **`process_image_for_evaluation(image_path, ground_truth_ocr, ground_truth_translation)`**: Combines OCR extraction and translation evaluation into one process.
+
+### OCR Functions
+- **`ocr_extraction(image_path: str) -> str`**  
+  Extracts text from an image using Tesseract OCR  
+  *Parameters*: `image_path` - Path to input image file (JPG/PNG)  
+  *Returns*: Raw extracted text as UTF-8 string
+
+- **`normalize_text(text: str) -> str`**  
+  Normalizes text by:  
+  - Converting to lowercase  
+  - Removing all punctuation  
+  - Collapsing multiple whitespaces  
+  *Parameters*: Raw input text  
+  *Returns*: Cleaned and normalized text
+
+### Translation Functions
+- **`load_translation_model() -> tuple`**  
+  Initializes MarianMT model and tokenizer  
+  *Returns*: Tuple containing (model, tokenizer)
+
+- **`translate_text(model, tokenizer, text: str) -> str`**  
+  Translates English text to French using MarianMT  
+  *Parameters*:  
+  - Pretrained model and tokenizer  
+  - English text (max 512 tokens)  
+  *Returns*: French translated text
+
+### Evaluation Metrics
+- **`calculate_wer(reference: str, hypothesis: str) -> float`**  
+  Computes Word Error Rate between reference and OCR text  
+  *Parameters*: Normalized reference and OCR texts  
+  *Returns*: WER score between 0 (perfect) and 1 (all wrong)
+
+- **`calculate_bleu(reference: str, hypothesis: str) -> float`**  
+  Computes BLEU-4 score between reference and translation  
+  *Parameters*: Normalized reference and translated texts  
+  *Returns*: BLEU score between 0 (no match) and 1 (exact match)
+
+### Pipeline Functions
+- **`evaluate_ocr(ocr_output: str, ground_truth_ocr: str) -> float`**  
+  Full OCR evaluation pipeline  
+  *Parameters*: Raw OCR output and ground truth text  
+  *Returns*: WER score
+
+- **`evaluate_translation(ocr_output: str, ground_truth_translation: str, model, tokenizer) -> float`**  
+  Full translation evaluation pipeline:  
+  1. Translates OCR text  
+  2. Compares with reference translation  
+  *Returns*: BLEU score
+
+- **`process_image_for_evaluation(image_path: str, ground_truth_ocr: str, ground_truth_translation: str) -> dict`**  
+  Complete end-to-end evaluation pipeline:  
+  1. OCR extraction  
+  2. OCR evaluation (WER)  
+  3. Translation  
+  4. Translation evaluation (BLEU)  
+  *Returns*: Dictionary with WER and BLEU scores
 
 ## Usage
 
